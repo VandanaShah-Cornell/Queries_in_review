@@ -1,3 +1,6 @@
+DROP TABLE IF EXISTS local.service_points_ext;
+
+CREATE TABLE local.service_points_ext AS
 select 
 	service_points.data #>> '{}' as service_point_id,  
 	isp.discovery_display_name as service_point_discovery_display_name,
@@ -19,4 +22,6 @@ left join folio_reporting.locations_libraries as ll
 on PIL.id=ll.location_id 
 ;
 
-	
+CREATE INDEX ON local.service_points_ext (service_point_discovery_display_name);
+CREATE INDEX ON local.local.service_points_ext (location_discovery_display_name);
+CREATE INDEX ON local.local.service_points_ext (library_name);	
