@@ -1,0 +1,22 @@
+select 
+	service_points.data #>> '{}' as service_point_id,  
+	isp.discovery_display_name as service_point_discovery_display_name,
+	isp."name" as service_point_name,
+	ll.location_id,
+	ll.discovery_display_name as location_discovery_display_name,
+	ll.location_name,
+	ll.library_id,
+	ll.library_name,
+	ll.campus_id, 
+	ll.campus_name,
+	ll.institution_id,
+	ll.institution_name 
+from public.inventory_locations as PIL
+cross join json_array_elements(json_extract_path(PIL.data, 'servicePointIds')) as service_points (data)
+left join public.inventory_service_points as isp 
+on service_points.data #>> '{}' = isp.id 
+left join folio_reporting.locations_libraries as ll 
+on PIL.id=ll.location_id 
+;
+
+	
