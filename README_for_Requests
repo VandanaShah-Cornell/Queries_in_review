@@ -1,0 +1,26 @@
+Requests_all
+
+Brief description: Provides a list of patron requests within a specified date range, along with request type, request status, fulfillment preference, location information, and patron details. 
+
+NOTE: This report includes patron personal information, which is not GDPR-compliant.
+
+This report generates data with the following format:
+(Insert EXCEL file here)
+
+Parameters
+Users of this query should edit the "parameters" statement at the top to limit the results to a particular date range.
+
+
+
+
+Requests_by_status
+
+Brief description: Provides a list of patron requests within a specified date range, and by request type. Data fields also included are patron group, patron status, delivery method (pick-up vs. delivery), owning location, pick-up location. 
+
+NOTE: This report includes patron personal information, which is not GDPR-compliant.
+
+This report generates data with the following format:
+(Insert EXCEL file here)
+
+Parameters
+Users of this query should edit the "parameters" statement at the top to limit the results to a particular date range, adn by request status. 
