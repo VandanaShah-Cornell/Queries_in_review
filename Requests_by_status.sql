@@ -14,11 +14,11 @@ SELECT
         FROM parameters) || ' to '::varchar || (
         SELECT end_date::varchar
         FROM parameters) AS date_range,
-     cr.id,
+     cr.id as request_id,
     cr.request_date,
     cr.request_type,
     cr.requester_id,
-    cr.status,
+    cr.status as request_status,
  --   cr.pickup_service_point_id,
  --   spe.service_point_discovery_display_name as pickup_service_point_name,
  --   spe.location_discovery_display_name as pickup_location_name,
@@ -29,7 +29,6 @@ SELECT
     he.call_number,
     ie.barcode,
     ie.material_type_name,
-    ie.holdings_record_id,
     ie.permanent_location_name,
     ie.effective_location_name,
     he.holdings_id,
