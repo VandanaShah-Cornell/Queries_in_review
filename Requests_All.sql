@@ -6,7 +6,7 @@ WITH parameters AS (
         )
 SELECT
     (SELECT start_date::varchar FROM parameters) || ' to ' || (SELECT end_date::varchar FROM parameters) AS date_range,
-    cr.id,
+    cr.id AS request_id,
     cr.request_date,
     cr.request_type,
     cr.requester_id,
