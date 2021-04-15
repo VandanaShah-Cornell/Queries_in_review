@@ -23,24 +23,28 @@ SELECT
         ac.description AS action_description,
         ac.object AS action_result,
         ac.source AS operator_id, --or will this be operator name?
-        ac.service_point_id AS service_point_id,
+        lsp.location_name AS location_name,
+        lsp.service_point_discovery_display_name AS service_point_display_name,
+      --ac.service_point_id AS service_point_id,
         json_extract_path_text(ac.data, 'linkToIds', 'userId') AS user_id,
         json_extract_path_text(ac.data, 'linkToIds', 'feeFineId') AS fee_fine_id,
         json_extract_path_text(ac.data, 'items', 'itemId') AS item_id,
+        json_extract_path_text(ac.data, 'items', 'holdingId') AS holding_id,
         json_extract_path_text(ac.data, 'items', 'loanId') AS loan_id,
         json_extract_path_text(ac.data, 'items', 'itemBarcode') AS item_barcode,
+        ih.shelving_title AS shelving_title, 
         ug.group_description AS patron_group_name,
         ug.user_last_name AS patron_last_name,
         ug.user_first_name AS patron_first_name,
         ug.user_middle_name AS patron_middle_name,
-        ug.user_email AS patron_email,
-        lsp.location_name AS location_name,
-        lsp.service_point_discovery_display_name AS service_point_display_name
-  FROM public.audit_circulation_logs AS ac
+        ug.user_email AS patron_email
+    FROM public.audit_circulation_logs AS ac
   LEFT JOIN folio_reporting.users_groups AS ug
   	ON json_extract_path_text(ac.data, 'linkToIds','userId') = ug.user_id
   LEFT JOIN folio_reporting.locations_service_points AS lsp
   	ON ac.service_point_id = lsp.service_point_id
+  LEFT JOIN public.inventory_holdings AS ih
+  	ON  json_extract_path_text(ac.data, 'items', 'holdingId') = ih.id
  WHERE
     ac.date >= (SELECT start_date FROM parameters)
     AND ac.date < (SELECT end_date FROM parameters)
