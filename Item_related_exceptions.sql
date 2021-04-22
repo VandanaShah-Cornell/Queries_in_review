@@ -1,6 +1,3 @@
---Query for REP-278
---Why is it not pulling in itemId, loanId, and itemBarcode?
-
 WITH parameters AS (
     SELECT
         /* Choose a start and end date for the request period */
@@ -9,10 +6,20 @@ WITH parameters AS (
         /* Fill in a location name, or leave blank */
         ''::varchar AS action_location_filter, 
         /* Fill in 1-4 action names, or leave all blank for all actions */
-        'Billed'::VARCHAR AS action_filter1,-- see list of actions in README documentation 
-        'Created'::VARCHAR AS action_filter2, -- other action to also include
+        ''::VARCHAR AS action_filter1,-- see list of actions in README documentation 
+        ''::VARCHAR AS action_filter2, -- other action to also include
         ''::VARCHAR AS action_filter3, -- other action to also include
         ''::VARCHAR AS action_filter4 -- other action to also include
+),
+items_array AS (
+    SELECT
+        ac.id AS log_id,
+        json_extract_path_text(items.data, 'itemId') AS item_id,
+        json_extract_path_text(items.data, 'loanId') AS loan_id,
+        json_extract_path_text(items.data, 'itemBarcode') AS item_barcode
+    FROM
+        public.audit_circulation_logs AS ac
+        CROSS JOIN json_array_elements(json_extract_path(data, 'items')) AS items (data)
 )
 SELECT
     (SELECT start_date::varchar FROM parameters) || 
@@ -26,9 +33,9 @@ SELECT
         ac.service_point_id AS service_point_id,
         json_extract_path_text(ac.data, 'linkToIds', 'userId') AS user_id,
         json_extract_path_text(ac.data, 'linkToIds', 'feeFineId') AS fee_fine_id,
-        json_extract_path_text(ac.data, 'items', 'itemId') AS item_id,
-        json_extract_path_text(ac.data, 'items', 'loanId') AS loan_id,
-        json_extract_path_text(ac.data, 'items', 'itemBarcode') AS item_barcode,
+        ia.item_id,
+        ia.loan_id,
+        ia.item_barcode,
         ug.group_description AS patron_group_name,
         ug.user_last_name AS patron_last_name,
         ug.user_first_name AS patron_first_name,
@@ -37,6 +44,8 @@ SELECT
         lsp.location_name AS location_name,
         lsp.service_point_discovery_display_name AS service_point_display_name
   FROM public.audit_circulation_logs AS ac
+  LEFT JOIN items_array AS ia
+  	ON ac.id=ia.log_id
   LEFT JOIN folio_reporting.users_groups AS ug
   	ON json_extract_path_text(ac.data, 'linkToIds','userId') = ug.user_id
   LEFT JOIN folio_reporting.locations_service_points AS lsp
