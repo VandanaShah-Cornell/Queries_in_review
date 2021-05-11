@@ -1,6 +1,3 @@
---The num_renewals is counting the loan renewals for this item, and not for this loan, right?
--- I think I have it wrong here. 
-
 /*FILTERS: number of days a loan is overdue, location name, and patron group name if needed, e.g. Borrow Direct*/
 
 WITH parameters AS (
@@ -18,7 +15,8 @@ days AS (
 SELECT 
 loan_id,
 DATE_PART('day',NOW() - loan_due_date) AS days_overdue
-from folio_reporting.loans_items)
+from folio_reporting.loans_items
+)
 SELECT
     li.patron_group_name,
     uu.id AS patron_id,
@@ -35,14 +33,14 @@ SELECT
     li.enumeration,
     li.barcode AS item_barcode,
     li.loan_date,
-    lrc.num_renewals,
+    cl.renewal_count AS loan_renewal_count,
     li.loan_due_date,
     days.days_overdue    
 FROM
     folio_reporting.loans_items AS li
     LEFT JOIN public.user_users AS uu ON li.user_id = uu.id
     LEFT JOIN folio_reporting.item_ext AS ie ON li.item_id = ie.item_id
-    LEFT JOIN folio_reporting.loans_renewal_count AS lrc ON li.item_id = lrc.item_id
+    LEFT JOIN public.circulation_loans AS cl ON li.loan_id = cl.id
     LEFT JOIN days ON days.loan_id=li.loan_id
     WHERE (days.days_overdue >0 AND days.days_overdue <= (SELECT days_overdue_filter FROM parameters))
     AND (li.patron_group_name = (SELECT patron_group_filter FROM parameters)
