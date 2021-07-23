@@ -30,7 +30,7 @@ WITH parameters AS (
         ug.user_email,
    --   json_extract_path_text(ii.data, 'effectiveCallNumberComponents', 'callNumber') AS call_number,
         ihi.title,
-        ihi.barcode AS item_barcode
+        ihi.barcode AS item_barcode,
         ihi.call_number AS item_call_number
     FROM
     	public.circulation_check_ins AS cc
