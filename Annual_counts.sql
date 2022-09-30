@@ -53,7 +53,7 @@ AND (he.discovery_suppress IS NOT TRUE OR he.discovery_suppress IS NULL)
 ),
 
 
-vs_volct1 AS 
+vs_all_counts AS 
     (SELECT DISTINCT
    	vi.item_id,
    	vi.item_record_created_date,
@@ -84,8 +84,8 @@ vs_volct1 AS
 --To select microforms, choose  microform='Yes'. 
   
     --For Tableau, run only this section
-   SELECT count(item_id) AS item_count, count(instance_id) AS instance_count, visualmat_type, format_code, format_name, microform, main_location, holdings_permanent_location_name AS permanent_location_name, locations, locations_details, item_record_created_date
-   FROM vs_volct1
+   SELECT item_id, instance_id, visualmat_type, format_code, format_name, microform, main_location, holdings_permanent_location_name AS permanent_location_name, locations, locations_details, item_record_created_date
+   FROM vs_all_counts
    GROUP BY visualmat_type, format_code, format_name, microform, main_location, holdings_permanent_location_name, locations, locations_details, item_record_created_date
    ;
    
