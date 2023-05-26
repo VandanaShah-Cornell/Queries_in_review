@@ -4,9 +4,7 @@ marc_formats AS
 	(SELECT 
  		DISTINCT sm.instance_id,
        	substring(sm."content", 7, 2) AS "leader0607"
-       	 		 
-    	FROM srs_marctab AS sm  
-    	LEFT JOIN folio_reporting.instance_ext ie ON sm.instance_id = ie.instance_id ::uuid	
+     	FROM srs_marctab AS sm  
     	WHERE  sm.field = '000'),
 
 holdings AS
@@ -28,7 +26,7 @@ holdings AS
 'Biochem Reading Room', 'Borrow Direct', 'CISER', 'cons,opt', 'Engineering', 'Engineering Reference', 'Engr,wpe',
 'Entomology', 'Food Science', 'Law Technical Services', 'LTS Review Shelves', 'LTS E-Resources & Serials','Mann Gateway',
 'Mann Hortorium', 'Mann Hortorium Reference', 'Mann Technical Services', 'Iron Mountain', 'Interlibrary Loan%', 'Phys Sci',
-'RMC Technical Services', 'No Library','x-test', 'z-test location' ])) --OR he.permanent_location_name IS NULL)
+'RMC Technical Services', 'No Library','x-test', 'z-test location' ]))
 
 --exclude the following materials as they are not available for discovery
 AND he.call_number NOT ILIKE ALL(ARRAY['on order%', 'in process%', 'Available for the library to purchase', 
@@ -38,7 +36,7 @@ AND (he.discovery_suppress IS NOT TRUE OR he.discovery_suppress IS NULL OR he.di
 AND he.permanent_location_name IS NOT NULL
 AND (ie.discovery_suppress IS NOT TRUE OR ie.discovery_suppress IS NULL OR ie.discovery_suppress = 'FALSE'))
 
-SELECT COUNT (hh.instance_id) AS title_count,
+SELECT COUNT (DISTINCT hh.instance_id) AS distinct_title_count,
 hh.leader0607,
 fmg.leader0607description,
 fmg.folio_format_type,
