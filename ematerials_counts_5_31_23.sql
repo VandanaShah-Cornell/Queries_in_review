@@ -4,32 +4,39 @@ marc_formats AS
  	sm.instance_id,
        	 substring(sm."content", 7, 2) AS "leader0607"
        	  FROM srs_marctab AS sm  
-    	 WHERE  sm.field = '000'),
+       	  LEFT JOIN folio_reporting.holdings_ext he ON sm.instance_id = he.instance_id::uuid
+    	 WHERE  sm.field = '000'
+    	 AND he.permanent_location_name LIKE 'serv,remo'
+    	 AND (he.discovery_suppress IS NOT TRUE OR he.discovery_suppress IS NULL OR he.discovery_suppress ='FALSE')
+    	 ),
 
---Pre-Folio identification of ematerial type by 948 field   	 
+--Pre-Folio identification of ematerial type by 948 field   
+--only 9 e-images	 
 field_format AS
 	(SELECT 
-	sm.instance_id,
-	sm."content" AS ematerial_type_by_948,
-	sm.sf
+	 sm.instance_id,
+	sm."content" AS ematerial_type_by_948
 	 FROM srs_marctab AS sm  
 	 WHERE sm.field = '948' AND sm.sf = 'f' AND sm.content IN ('fd','webfeatdb','imagedb','ebk','j','evideo','eaudio','escore','ewb','emap','emisc')),
 	 
---Post-Folio identification of ematerial type by stat code	 
+--Post-Folio identification of ematerial type by stat code	
+--Zero images 
 statcode_format AS 
 	(SELECT
-	sm.instance_id,
+	 sm.instance_id,
 	 string_agg(DISTINCT isc.statistical_code, ', ') AS ematerial_type_by_stat_code
 	FROM srs_marctab AS sm  
 	LEFT JOIN folio_reporting.instance_statistical_codes AS isc ON sm.instance_id = isc.instance_id ::uuid
 	WHERE isc.statistical_code IN ('fd','webfeatdb','imagedb','ebk','j','evideo','eaudio','escore','ewb','emap','emisc')
 	GROUP BY sm.instance_id	
+	ORDER BY string_agg(DISTINCT isc.statistical_code, ', ')
 	),
+	
 	
 format_merge AS	
 	(SELECT 
  	mf.instance_id,
- 	mf.leader0607,
+ 	fmg.leader0607description,
  	ff.ematerial_type_by_948,
  	sf.ematerial_type_by_stat_code,
  	 	
@@ -52,21 +59,34 @@ format_merge AS
  	FROM 
 marc_formats AS mf
 LEFT JOIN field_format AS ff ON mf.instance_id = ff.instance_id
-LEFT JOIN statcode_format AS sf ON mf.instance_id = sf.instance_id)
+LEFT JOIN statcode_format AS sf ON mf.instance_id = sf.instance_id
+LEFT JOIN local_core.vs_folio_physical_material_formats AS fmg ON mf.leader0607=fmg.leader0607),
 
 
-
-SELECT count(DISTINCT fm.instance_id) AS CountDistinctInstanceID,
-fm.leader0607,
+merge2 AS
+(SELECT DISTINCT fm.instance_id,
+fm.leader0607description,
 fm.ematerial_type_by_948,
 fm.ematerial_type_by_stat_code,
 fm.ematerial_format
-FROM format_merge AS fm
-WHERE ematerial='Yes'
+FROM format_merge AS fm)
+
+SELECT COUNT (DISTINCT mm.instance_id),
+mm.leader0607description,
+mm.ematerial_type_by_948,
+mm.ematerial_type_by_stat_code,
+mm.ematerial_format
+
+FROM merge2 AS mm
+
 
 GROUP BY 
-fm.leader0607,
-fm.ematerial_type_by_948,
-fm.ematerial_type_by_stat_code,
-fm.ematerial_format
+mm.leader0607description,
+mm.ematerial_type_by_948,
+mm.ematerial_type_by_stat_code,
+mm.ematerial_format
+
+
+
 ;
+
