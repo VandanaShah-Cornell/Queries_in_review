@@ -37,6 +37,7 @@ holdings AS
 
 AND he.call_number NOT ILIKE ALL(ARRAY['on order%', 'in process%', 'Available for the library to purchase', 
  'On selector%', '%film%','%fiche%', '%micro%', '%vault%']) 
+AND ii.title NOT ILIKE '%microform%' 
 
 --exclude the following materials as they are not available for discovery
 
@@ -52,7 +53,6 @@ items AS
 DISTINCT ie.item_id, 
 ie.holdings_record_id AS holdings_id,
 ie.created_date::DATE AS item_record_created_date,
-ie.material_type_name AS item_material_type_name,
 ie.permanent_location_id,
 ie.permanent_location_name AS item_permanent_location_name,
 date_part ('month',ie.created_date::DATE) as month_record_created,
@@ -72,15 +72,14 @@ WHERE concat_ws (' ',ie.effective_call_number_prefix,ie.effective_call_number,ie
 ),
 
 --combine holdings and instances subqueries and include format descriptors from the translation table 'local_core.vs_folio_physical_material_formats'
+
 combined AS   
 (SELECT DISTINCT
   	hh.instance_id,
    	hh.holdings_id,
     hh.holdings_permanent_location_name,
    	ite.item_id,
-   	ite.item_material_type_name,
-   	ite.item_permanent_location_name,
-  	ite.record_created_fiscal_year,
+   	ite.record_created_fiscal_year,
    	adc2.adc_loc_translation AS holdings_adc_loc_translation,
    	ll.discovery_display_name,
    	ll.library_name AS holdings_library_name,
@@ -102,36 +101,28 @@ combined AS
     
     
    SELECT 
-    count(DISTINCT cc.instance_id) AS countDistinct_instanceID,
- 	count(cc.instance_id) AS count_instanceID,
- 	count(DISTINCT cc.holdings_id) AS countDistinct_holdings_ID,
- 	count(DISTINCT cc.item_id) AS counDistinct_itemID,
-  	cc.item_material_type_name,
-  	cc.record_created_fiscal_year,
+    count(DISTINCT cc.item_id) AS counDistinct_itemID,
+   	cc.record_created_fiscal_year,
    	cc.holdings_permanent_location_name,
-   	cc.item_permanent_location_name,
    	cc.holdings_adc_loc_translation,
    	cc.holdings_library_name,
-   	cc.items_library_name,
-  	cc.leader0607,
+   	cc.leader0607,
   	cc.leader0607description,
   	cc.folio_format_type,
-	  cc.folio_format_type_adc_groups, 
-	  cc.folio_format_type_acrl_nces_groups
+	cc.folio_format_type_adc_groups, 
+	cc.folio_format_type_acrl_nces_groups
        FROM combined AS cc
     
    
     GROUP BY
            
-    cc.item_material_type_name,
- 	cc.record_created_fiscal_year,
+   	cc.record_created_fiscal_year,
    	cc.holdings_permanent_location_name,
-   	cc.item_permanent_location_name,
    	cc.holdings_adc_loc_translation,
    	cc.holdings_library_name,
-   	cc.items_library_name,
-  	cc.leader0607,
+   	cc.leader0607,
   	cc.leader0607description,
   	cc.folio_format_type,
 	cc.folio_format_type_adc_groups, 
 	cc.folio_format_type_acrl_nces_groups
+	;
