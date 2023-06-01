@@ -32,10 +32,21 @@ statcode_format AS
 	ORDER BY string_agg(DISTINCT isc.statistical_code, ', ')
 	),
 	
-	
+--FLAGGING UNPURCHASED
+unpurch AS
+	(SELECT 
+     DISTINCT sm.instance_id,
+     sm."content"  AS "unpurchased"
+      FROM srs_marctab AS sm  
+       WHERE sm.field LIKE '899'
+    AND sm.sf LIKE 'a'
+    AND sm."content" ILIKE 'Couttspdbappr'
+   ),
+
 format_merge AS	
 	(SELECT 
  	mf.instance_id,
+ 	up.unpurchased,
  	fmg.leader0607description,
  	ff.ematerial_type_by_948,
  	sf.ematerial_type_by_stat_code,
@@ -60,7 +71,8 @@ format_merge AS
 marc_formats AS mf
 LEFT JOIN field_format AS ff ON mf.instance_id = ff.instance_id
 LEFT JOIN statcode_format AS sf ON mf.instance_id = sf.instance_id
-LEFT JOIN local_core.vs_folio_physical_material_formats AS fmg ON mf.leader0607=fmg.leader0607),
+LEFT JOIN local_core.vs_folio_physical_material_formats AS fmg ON mf.leader0607=fmg.leader0607
+LEFT JOIN unpurch AS up ON up.instance_id=mf.instance_id),
 
 
 merge2 AS
@@ -68,8 +80,10 @@ merge2 AS
 fm.leader0607description,
 fm.ematerial_type_by_948,
 fm.ematerial_type_by_stat_code,
-fm.ematerial_format
-FROM format_merge AS fm)
+fm.ematerial_format,
+fm.unpurchased
+FROM format_merge AS fm
+)
 
 SELECT COUNT (DISTINCT mm.instance_id),
 mm.leader0607description,
@@ -84,9 +98,11 @@ GROUP BY
 mm.leader0607description,
 mm.ematerial_type_by_948,
 mm.ematerial_type_by_stat_code,
-mm.ematerial_format
+mm.ematerial_format,
+mm.unpurchased
 
 
 
 ;
+
 
