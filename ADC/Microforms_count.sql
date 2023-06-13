@@ -10,24 +10,27 @@ candidates AS
 
                 FROM srs_marctab AS sm
                 LEFT JOIN folio_reporting.holdings_ext he ON sm.instance_id = he.instance_id::uuid
-                LEFT JOIN inventory_instances as ii ON ii.id::uuid=sm.instance_id
+                LEFT JOIN folio_reporting.instance_ext AS ie ON ie.instance_id::uuid=sm.instance_id
                 WHERE  sm.field = '007'  AND substring (sm."content",1,1) = 'h'
                 OR (he.call_number similar to '%(Film|Fiche|Micro|film|fiche|micro)%')
-       			OR (ii.title ilike '%[microform]%')
+       			OR (ie.title ilike '%microform%')
                 AND (he.discovery_suppress IS NOT TRUE OR he.discovery_suppress IS NULL OR he.discovery_suppress ='FALSE')
-                AND
- --exclude materials from the following locations, as these locations are sub-sets of main locations, and including them would result in double counts
-(he.permanent_location_name NOT ILIKE ALL(ARRAY['serv,remo', '%LTS%','Agricultural Engineering','Bindery Circulation',
+                AND (ie.discovery_suppress IS NOT TRUE OR ie.discovery_suppress IS NULL OR ie.discovery_suppress ='FALSE')
+                
+ /*Excludes serv,remo which are all e-materials and are counted in a separate query. Also excludes materials 
+* from the following locations as they: no longer exist; are not yet received/cataloged; are not owned by the Library; etc.
+* Also excludes microforms and items not yet cataloged via call number and/or title.*/
+
+AND (he.permanent_location_name NOT ILIKE ALL(ARRAY['serv,remo', '%LTS%','Agricultural Engineering','Bindery Circulation',
 'Biochem Reading Room', 'Borrow Direct', 'CISER', 'cons,opt', 'Engineering', 'Engineering Reference', 'Engr,wpe',
 'Entomology', 'Food Science', 'Law Technical Services', 'LTS Review Shelves', 'LTS E-Resources & Serials','Mann Gateway',
 'Mann Hortorium', 'Mann Hortorium Reference', 'Mann Technical Services', 'Iron Mountain', 'Interlibrary Loan%', 'Phys Sci',
-'RMC Technical Services', 'No Library','x-test', 'z-test location' ]) OR he.permanent_location_name IS NULL)
+'RMC Technical Services', 'No Library','x-test', 'z-test location' ]) 
+AND he.permanent_location_name IS NOT NULL)
 
 --exclude the following materials as they are not available for discovery
 AND trim(concat (he.call_number_prefix,' ',he.call_number,' ',he.call_number_suffix)) NOT ILIKE ALL(ARRAY['on order%', 'in process%', 'Available for the library to purchase', 
- 'On selector%'])
-AND (he.discovery_suppress IS NOT TRUE OR he.discovery_suppress IS NULL)
-AND (he.discovery_suppress is null or he.discovery_suppress = 'False')
+ 'On selector%', 'vault'])
 )
 
         
