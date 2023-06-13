@@ -40,7 +40,7 @@ unpurch AS
                                 
                                 WHERE sm.field = '899'
                                     AND sm.sf LIKE 'a'
-                                    AND sm.CONTENT ILIKE ANY (ARRAY['DDA_pqecebks','DDA_eastvwebksmu',' DDA_eastvwebksmu', 'DDA_esatvwebksmu', 'DDA_casaliniebkmu']) 
+                                    AND sm.CONTENT ILIKE ANY (ARRAY['DDA_pqecebks', 'PDA_casaliniebkmu']) 
 ),
 
 format_merge AS
@@ -113,4 +113,3 @@ GROUP BY
                 format_final.ematerial,
                 format_final.ematerial_format
 ;
-
