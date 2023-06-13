@@ -5,30 +5,56 @@ marc_formats AS
  		DISTINCT sm.instance_id,
        	substring(sm."content", 7, 2) AS "leader0607"
        	  FROM srs_marctab AS sm  
-         LEFT JOIN folio_reporting.instance_ext ie ON sm.instance_id = ie.instance_id ::uuid	
+         LEFT JOIN folio_reporting.instance_ext AS ie ON sm.instance_id = ie.instance_id ::uuid	
     	 WHERE  sm.field = '000'
     	 AND (ie.discovery_suppress = 'FALSE' OR ie.discovery_suppress IS NULL OR ie.discovery_suppress IS NOT TRUE)
     	
     	 ),
 
+--Flagging microforms via 007 field
+micros AS
+	(SELECT DISTINCT 
+		sm.instance_id,
+		substring (sm."content",1,1) AS micro_by_007
+          FROM srs_marctab AS sm
+          WHERE  sm.field = '007'  AND substring (sm."content",1,1) = 'h'
+                ),
+                
+ unpurch AS
+(SELECT 
+     DISTINCT sm.instance_id,
+     sm."content"  AS "unpurchased"
+      FROM srs_marctab AS sm  
+WHERE sm.field LIKE '899'
+    AND sm.sf LIKE 'a'
+    AND sm."content" ILIKE 'couttspdbappr'
+ ), 
  
---bring in holdings details in order to exclude some locations
-    	 
+--bring in holdings details 
+/*Excludes serv,remo which are all e-materials and are counted in a separate query. Also excludes materials 
+* from the following locations as they: no longer exist; are not yet received/cataloged; are not owned by the Library; etc.
+* Also excludes microforms and items not yet cataloged via call number and/or title.*/
+
+    
+ 
+
 holdings AS
     (SELECT 
    	he.holdings_id,
    	he.instance_id,
    	he.permanent_location_id,
-   	he.permanent_location_name AS holdings_permanent_location_name
- 
+   	he.permanent_location_name AS holdings_permanent_location_name,
+ 	up.unpurchased,
+ 	mc.micro_by_007
 	   	   	   	
    	FROM folio_reporting.holdings_ext AS he
   
-   	LEFT JOIN folio_reporting.instance_ext AS ii ON he.instance_id=ii.instance_id
+   	LEFT JOIN folio_reporting.instance_ext AS ie ON he.instance_id=ie.instance_id
+   	LEFT JOIN unpurch AS up ON he.instance_id::uuid=up.instance_id
+   	LEFT JOIN micros AS mc ON he.instance_id::uuid=mc.instance_id
+   
  
- --exclude materials from the following locations, as these locations are sub-sets of main locations, and including them would result in double counts
- --also exclude serv,remo which are all e-materials and are counted in a separate query
-   	WHERE 
+ WHERE 
    (he.permanent_location_name NOT ILIKE ALL(ARRAY['serv,remo', '%LTS%','Agricultural Engineering','Bindery Circulation',
 'Biochem Reading Room', 'Borrow Direct', 'CISER', 'cons,opt', 'Engineering', 'Engineering Reference', 'Engr,wpe',
 'Entomology', 'Food Science', 'Law Technical Services', 'LTS Review Shelves', 'LTS E-Resources & Serials','Mann Gateway',
@@ -37,12 +63,10 @@ holdings AS
 
 AND he.call_number NOT ILIKE ALL(ARRAY['on order%', 'in process%', 'Available for the library to purchase', 
  'On selector%', '%film%','%fiche%', '%micro%', '%vault%']) 
-AND ii.title NOT ILIKE '%microform%' 
-
---exclude the following materials as they are not available for discovery
-
 AND (he.discovery_suppress IS NOT TRUE OR he.discovery_suppress IS NULL OR he.discovery_suppress ='FALSE')
 AND he.permanent_location_name IS NOT NULL
+AND ie.title NOT ILIKE '%microform%' 
+
 ORDER BY he.instance_id, he.holdings_id
 ),
 
@@ -66,7 +90,8 @@ CASE WHEN
 
 FROM folio_reporting.item_ext as ie 
 
---exclude materials labeled as 'bound with' as they are a subset of an item
+/*Excludes materials labeled as 'bound with' as they are bound with other titles in one volume, so these records are duplicates.*/
+
 WHERE concat_ws (' ',ie.effective_call_number_prefix,ie.effective_call_number,ie.effective_call_number_suffix,ie.enumeration,ie.chronology) NOT ILIKE '%bound%with%'
 
 ),
@@ -77,6 +102,8 @@ combined AS
   	hh.instance_id,
    	hh.holdings_id,
     hh.holdings_permanent_location_name,
+    hh.unpurchased,
+    hh.micro_by_007,
    	ite.item_id,
    	ite.record_created_fiscal_year,
    	adc2.adc_loc_translation AS holdings_adc_loc_translation,
@@ -96,7 +123,7 @@ combined AS
 	LEFT JOIN folio_reporting.locations_libraries AS ll ON hh.permanent_location_id = ll.location_id  
 	LEFT JOIN folio_reporting.locations_libraries AS lz ON ite.permanent_location_id = lz.location_id  
    	LEFT JOIN local_core.vs_folio_physical_material_formats AS fmg ON fmg.leader0607 = fm.leader0607
-    LEFT JOIN local_core.lm_adc_loc_translation AS adc2 ON 	hh.holdings_permanent_location_name=adc2.permanent_location_name)
+    LEFT JOIN local_core.lm_adc_loc_translation AS adc2 ON hh.holdings_permanent_location_name=adc2.permanent_location_name)
     
     
    SELECT 
@@ -109,7 +136,9 @@ combined AS
   	cc.leader0607description,
   	cc.folio_format_type,
 	cc.folio_format_type_adc_groups, 
-	cc.folio_format_type_acrl_nces_groups
+	cc.folio_format_type_acrl_nces_groups,
+	cc.unpurchased,
+	cc.micro_by_007
        FROM combined AS cc
     
    
@@ -123,5 +152,7 @@ combined AS
   	cc.leader0607description,
   	cc.folio_format_type,
 	cc.folio_format_type_adc_groups, 
-	cc.folio_format_type_acrl_nces_groups
+	cc.folio_format_type_acrl_nces_groups,
+	cc.unpurchased,
+	cc.micro_by_007
 	;
