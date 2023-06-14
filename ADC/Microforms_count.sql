@@ -19,7 +19,7 @@ candidates AS
                 
  /*Excludes serv,remo which are all e-materials and are counted in a separate query. Also excludes materials 
 * from the following locations as they: no longer exist; are not yet received/cataloged; are not owned by the Library; etc.
-* Also excludes microforms and items not yet cataloged via call number and/or title.*/
+*/
 
 AND (he.permanent_location_name NOT ILIKE ALL(ARRAY['serv,remo', '%LTS%','Agricultural Engineering','Bindery Circulation',
 'Biochem Reading Room', 'Borrow Direct', 'CISER', 'cons,opt', 'Engineering', 'Engineering Reference', 'Engr,wpe',
