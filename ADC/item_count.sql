@@ -65,7 +65,7 @@ AND he.call_number NOT ILIKE ALL(ARRAY['on order%', 'in process%', 'Available fo
  'On selector%', '%film%','%fiche%', '%micro%', '%vault%']) 
 AND (he.discovery_suppress IS NOT TRUE OR he.discovery_suppress IS NULL OR he.discovery_suppress ='FALSE')
 AND he.permanent_location_name IS NOT NULL
-AND ie.title NOT ILIKE '%microform%' 
+AND ie.title NOT ILIKE '%[microform]%' 
 
 ORDER BY he.instance_id, he.holdings_id
 ),
