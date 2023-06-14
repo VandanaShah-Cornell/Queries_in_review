@@ -13,7 +13,7 @@ candidates AS
                 LEFT JOIN folio_reporting.instance_ext AS ie ON ie.instance_id::uuid=sm.instance_id
                 WHERE  sm.field = '007'  AND substring (sm."content",1,1) = 'h'
                 OR (he.call_number similar to '%(Film|Fiche|Micro|film|fiche|micro)%')
-       			OR (ie.title ilike '%microform%')
+       			OR (ie.title ilike '%[microform]%')
                 AND (he.discovery_suppress IS NOT TRUE OR he.discovery_suppress IS NULL OR he.discovery_suppress ='FALSE')
                 AND (ie.discovery_suppress IS NOT TRUE OR ie.discovery_suppress IS NULL OR ie.discovery_suppress ='FALSE')
                 
