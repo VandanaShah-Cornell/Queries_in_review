@@ -109,8 +109,10 @@ format_final.permanent_location_name
 
 
 FROM format_final
+WHERE format_final.ematerial_format='unknown'
+  
 GROUP BY
-				format_final.instance_hrid,
+		format_final.instance_hrid,
                 format_final.leader0607description,
                 format_final.ematerial_type_by_948,
                 format_final.ematerial_type_by_stat_code,
@@ -119,5 +121,8 @@ GROUP BY
                 format_final.ematerial_format,
                 format_final.permanent_location_name
                 
-                ORDER BY ematerial_format DESC
+                
+              
+                
+                
 ;
